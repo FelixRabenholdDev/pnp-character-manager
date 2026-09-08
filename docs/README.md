@@ -9,6 +9,22 @@ Industriestandard-Niveau zu erlernen.
 Die Anwendung verwaltet Charaktere für mehrere Pen-&-Paper-Regelwerke unter einer gemeinsamen
 Oberfläche. Aktuell unterstützt: **D&D 5e (2024)**. Geplant: **Pathfinder 1e**, **Das Schwarze Auge 5**.
 
+## Projektvision
+
+Dieses Projekt verfolgt zwei parallele Ziele: zum einen dient es dem strukturierten Erlernen von
+Java/Spring-Boot-Backend-Entwicklung, Angular und Kubernetes-Deployment; zum anderen soll es langfristig
+zu einem vollständigen Werkzeug für Pen-&-Paper-Charaktere heranwachsen — inklusive Inventar,
+Feats, Zaubern und NPC-Verwaltung für Spielleiter.
+
+Um beide Ziele nicht zu vermischen, folgt die Entwicklung zwei getrennten Spuren:
+
+- **Lern-Roadmap** (Phasen 0–9, mit definiertem Ende): Backend- und Frontend-Grundlagen, Docker,
+  Kubernetes, CI/CD — mit bewusst minimaler, aber korrekter Regeltiefe.
+- **Content- & Regeltiefe** (Phase 10, fortlaufend, kein Enddatum): Feats mit echten Effekten,
+  Zauber, Inventar mit Attributs-Boni, vollständige Rassen-/Klassenmerkmale, NPC-Unterstützung.
+
+Details zu beiden Spuren: siehe [`docs/roadmap.md`](docs/roadmap.md).
+
 ## Architektur
 
 Jedes Regelwerk wird durch einen eigenständigen Backend-Service abgebildet, da sich die

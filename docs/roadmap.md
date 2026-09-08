@@ -1,171 +1,141 @@
 # Lernprojekt: Pen & Paper Charakterverwaltung — Java Fullstack
 
 **Stack:** Spring Boot (Backend, pro Regelwerk) · Angular (ein gemeinsames Frontend) · PostgreSQL · Docker · Kubernetes (k3s)
-**Ziel:** Java auf Industriestandard-Niveau lernen, inkl. Cloud-native Deployment
-**Zuletzt aktualisiert:** während Phase 3, mit neu eingeplanter Phase 4 (DnD-5e-Erstellungsregeln)
+**Ziel:** Java auf Industriestandard-Niveau lernen, inkl. Cloud-native Deployment — **und** ein langfristig
+weiter wachsendes, echtes Pen-&-Paper-Tool aufbauen.
+**Zuletzt aktualisiert:** während Phase 4 (Referenzdaten), mit neuer Zwei-Spuren-Struktur
+
+---
+
+## Grundsatzentscheidung: Zwei getrennte Spuren
+
+Das Projekt hat sich von einem reinen Lernvorhaben zu einem Werkzeug entwickelt, an dem langfristig
+weitergearbeitet werden soll — inklusive vollständiger Charaktererstellung, Inventar mit Attributs-Boni,
+Feats, und NPC-Verwaltung für Spielleiter. Um das ursprüngliche Kernlernziel (Java/Spring/Kubernetes)
+nicht in einem reinen Dateneingabe-Projekt zu verlieren, wird bewusst zwischen zwei Dingen unterschieden:
+
+- **Mechanismus/Architektur** (wie wirken Boni aus verschiedenen Quellen auf einen Charakter, wie ist
+  das Datenmodell strukturiert) — das lohnt sich, **früh** durchdacht anzulegen, da nachträgliche Änderungen
+  teuer sind.
+- **Inhalte** (jedes einzelne Feat, jeder Zauber, jeder Ausrüstungsgegenstand) — reine Dateneingabe, ohne
+  Auswirkung auf die Architektur, kann **beliebig lange nach und nach** ergänzt werden.
+
+**Konsequenz:** Die Roadmap besteht aus zwei Spuren:
+
+1. **Spur 1 (Phasen 0–9):** die ursprüngliche, lernzielorientierte Roadmap mit definiertem Ende
+   (Backend, Frontend, Docker, Kubernetes, CI/CD) — bewusst mit **minimaler, aber korrekter**
+   Regeltiefe (Kern-Attributsystem, Point Buy/Standard Array, grundlegende Referenzdaten).
+2. **Spur 2 (Phase 10, neu):** ein bewusst **nie abgeschlossenes** Content- und Regeltiefe-Vorhaben,
+   das nach Spur 1 (oder parallel dazu) beliebig lange weiterläuft — Feats mit echten Effekten, Zauber,
+   Inventar mit Attributs-Boni, vollständige Rassen-Merkmale, NPC-Unterstützung, Multiclassing.
 
 ---
 
 ## Architektur-Update: Multi-Regelwerk-Fähigkeit
 
-Das Projekt ist von einer reinen D&D-5e-Anwendung zu einem **regelwerkübergreifenden** Charakterverwaltungs-Tool
-gewachsen. Geplante weitere Regelwerke: **Pathfinder 1e**, **Das Schwarze Auge 5. Edition**.
-
-**Backend: ein eigenständiger Service pro Regelwerk**, da sich die Regelwerke fachlich zu stark unterscheiden
-für ein gemeinsames Datenmodell.
-
-| Repository | Regelwerk | Status |
-|---|---|---|
-| `dnd-backend` | D&D 5e (2024) | ✅ Phase 1 + 2 abgeschlossen, Phase 4 (neu) geplant |
-| `pathfinder-backend` | Pathfinder 1e | geplant, eigenes zukünftiges Repo |
-| `dsa5-backend` | DSA 5 | geplant, eigenes zukünftiges Repo |
-
-**Frontend: eine gemeinsame Anwendung** (`pnp-character-manager-frontend`), Ordnerstruktur von Anfang an
-verschachtelt nach Regelwerk vorbereitet: `features/characters/dnd5e/`, später `.../pathfinder/`, `.../dsa5/`.
-
-**Kubernetes-Rolle:** Ingress-Routing nach Pfad pro Regelwerk-Service, gemeinsamer, zustandsloser
-JWT-Auth-Service — konkret aufgebaut in der Kubernetes-Phase.
+Backend als eigenständiger Service pro Regelwerk (`dnd-backend`, künftig `pathfinder-backend`,
+`dsa5-backend`), ein gemeinsames Angular-Frontend (`pnp-character-manager-frontend`). Details siehe
+vorherige Roadmap-Version / README des Meta-Repos `pnp-character-manager`.
 
 ---
 
 ## Phase 0 — Vorbereitung ✅ abgeschlossen
-
-WSL2 + Ubuntu, Java 21 LTS, Maven, IntelliJ IDEA, Node.js 24 LTS + Angular CLI, Docker Desktop +
-WSL2-Integration, Git-Identität, Projektgerüste, GitHub-Anbindung.
-
----
-
 ## Phase 1 — Backend-Grundlagen (`dnd-backend`) ✅ abgeschlossen
-
-Java-Auffrischung · Spring Boot Basics (DI) · REST-API · Persistenz (JPA, Flyway) · Validierung &
-Fehlerbehandlung · DnD-5e-Basis-Domänenlogik (Modifikatoren, Proficiency Bonus) · Testing · API-Doku.
-
 📄 `Phase1_Backend-Grundlagen.pdf`
-
----
-
 ## Phase 2 — Authentifizierung & Autorisierung (`dnd-backend`) ✅ abgeschlossen
-
-Spring Security · User-Entity & Passwort-Hashing · JWT · Autorisierung (Besitzer-Zuordnung) · CORS ·
-Abschluss: Umstrukturierung in Feature-Packages (`character/`, `auth/`, `config/`).
-
 📄 `Phase2_Authentifizierung-Autorisierung.pdf`
 
 ---
 
 ## Phase 3 — Frontend-Grundlagen (`pnp-character-manager-frontend`) ⏳ in Arbeit
 
-Angular gegen die fertige `dnd-backend`-API. Angular Material, Standalone Components.
-
-1. ✅ Projektstruktur, Environment-Konfiguration
-2. ✅ HttpClient-Anbindung, erster Service, CORS verifiziert (inkl. `127.0.0.1`-vs-`localhost`-Fallstrick)
-3. ✅ Auth-Flow — Login, JWT-Interceptor, Route Guard. Dabei gefundener und behobener Bug: abgelaufene
-   Tokens ließen das Backend mit `500` statt sauberem `401/403` abstürzen (`JwtAuthenticationFilter` fing
-   nur `isTokenValid`, nicht `extractUsername` ab) — Interceptor schickt außerdem bewusst kein Token mehr
-   an `/auth/login` bzw. `/auth/register`.
-4. ✅ Charakter-Liste (Material Cards) & Detailansicht (`ActivatedRoute`, dynamische Routen-Parameter)
-5. ⏳ **Charakter-Erstellung — Basisversion fertig, wird nach Phase 4 (neu) erweitert.** Reactive Forms mit
-   verschachtelter `FormGroup` für `stats` stehen; aktuell nur einfache Wertebereichs-Validierung
-   (1–30 je Attribut), noch **ohne** echte D&D-5e-Erstellungsregeln (Point Buy/Standard Array,
-   Rasse/Klasse als Freitext statt Referenzdaten) — das folgt gezielt in der neuen Phase 4.
-6. Fehlerbehandlung & Ladezustände weiter verfeinern
-7. Feinschliff Angular-Material-Styling
-8. Internationalisierung (DE/EN) — Transloco, Backend-Fehlercodes statt fester Texte
+1–4 ✅ (Projektstruktur, HttpClient/CORS, Auth-Flow, Liste & Detailansicht)
+5. ⏳ Charakter-Erstellung — Basisversion fertig, wird nach Phase 4 mit echten Referenzdaten erweitert
+6–8. offen (Fehlerbehandlung, Styling-Feinschliff, Internationalisierung)
 
 ---
 
-## Phase 4 — DnD-5e-Erstellungsregeln (neu, `dnd-backend` + Frontend) ⏳ geplant
+## Phase 4 — DnD-5e-Erstellungsregeln (`dnd-backend` + Frontend) ⏳ in Arbeit
 
-**Warum als eigene Phase, nicht einfach "mehr Validierung" in Phase 3:** Diese Anforderung verlangt echte
-**Backend-Erweiterungen** (neue Referenzdaten-Entities, neue Geschäftsregel-Validierung), nicht nur
-Frontend-Feinschliff. Um unser Grundprinzip ("Backend fertig, dann Frontend dagegen bauen") nicht zu
-verletzen, wird das als bewusster, in sich geschlossener Rückschritt zum Backend behandelt, bevor das
-Frontend die neuen Möglichkeiten konsumiert.
+**Bewusst minimal gehaltene Regeltiefe** (Spur 1), volle Inhaltstiefe folgt in Phase 10 (Spur 2).
 
-**Wichtige Regel-Klarstellung (2024-Edition, nicht 2014):** Attributsboni kommen in D&D 5e 2024 vom
-**Background**, nicht von der Rasse — das Modell muss das korrekt widerspiegeln, nicht die ältere
-2014-Logik übernehmen.
+### Schritt 1 — Referenzdaten: Rassen, Klassen, Backgrounds ⏳ in Arbeit
+- Entities `RaceDefinition`, `CharacterClassDefinition`, `BackgroundDefinition` — bewusst mit
+  `...Definition`-Suffix zur Vermeidung von Java-Namenskonflikten (insbesondere `Class`)
+- Eigenes Unter-Package `character/referencedata/`, da mit sieben+ neuen Klassen ein eigener
+  fachlicher Bereich entsteht
+- `BackgroundDefinition` nutzt `@ElementCollection` + `@Enumerated(EnumType.STRING)` für die drei
+  berechtigten Attribute (neues JPA-Konzept, wichtige Falle: `EnumType.ORDINAL` wäre fragil bei
+  späteren Enum-Änderungen)
+- **Umfangs-Entscheidung:** Referenzdaten enthalten Name + Beschreibung + eine einfache,
+  rein informative Traits-Liste (`@ElementCollection<String>`, z. B. "Dunkelsicht 18m") — bewusst
+  **ohne** mechanische Auswertung dieser Traits im Code. Volle mechanische Umsetzung (Feats mit
+  echten Effekten, Klassenmerkmale pro Level) ist explizit Phase 10, nicht hier.
+- Seed-Daten via Flyway-Migration (`V4__create_reference_data_tables.sql`), auf Basis der
+  offiziellen 2024-PHB-Backgrounds (Acolyte, Criminal, Soldier, Sailor, Entertainer, Noble, Guard,
+  Farmer) mit korrekt recherchierten Attribut-Zuordnungen
+- Öffentlicher, lesender `ReferenceDataController` (`/api/reference-data/races|classes|backgrounds`),
+  in `SecurityConfig` als `permitAll()` markiert
 
-### Schritt 1 — Referenzdaten: Rassen, Klassen, Backgrounds (Backend)
-- Neue Entities (Namensgebung mit Bedacht wegen möglicher Java-Namenskonflikte prüfen, z. B.
-  `RaceDefinition`, `ClassDefinition`, `BackgroundDefinition`)
-- Datenhaltung: feste Referenztabellen, befüllt über eine Flyway-Migration (Seed-Daten), nicht
-  Hibernate-generiert
-- Neue, öffentlich lesbare Endpoints: `GET /api/races`, `GET /api/classes`, `GET /api/backgrounds`
-- `PlayerCharacter` verweist danach auf diese Referenzdaten (Fremdschlüssel) statt auf freien Text
+### Schritt 2 — Erstellungsmethode & Point-Buy-Validierung
+- Feld `generationMethod` (Enum: `POINT_BUY`, `STANDARD_ARRAY`)
+- Eigene Validierungs-Annotation mit `ConstraintValidator`-Implementierung (neues Java-Konzept,
+  cross-field Validation über einfaches `@Min`/`@Max` hinaus)
 
-### Schritt 2 — Erstellungsmethode & Point-Buy-Validierung (Backend)
-- Neues Feld `generationMethod` (Enum: `POINT_BUY`, `STANDARD_ARRAY`)
-- **Neues Java-Konzept: eigene Validierungs-Annotation** (`@ValidAbilityScores` o. ä.) mit einer
-  Implementierung von `ConstraintValidator` — Bean Validation über einfaches `@Min`/`@Max` hinaus,
-  da hier **mehrere Felder gemeinsam** geprüft werden müssen (Kostentabelle, Gesamtbudget 27 Punkte
-  bzw. exakte Übereinstimmung mit `{15,14,13,12,10,8}`)
-- Unit-Tests für beide Erstellungsmethoden, inkl. Grenzfällen (genau 27 Punkte, 28 Punkte → Fehler)
-
-### Schritt 3 — Background-Boni anwenden (Backend)
-- Modellierungsentscheidung dokumentieren: rohe (gewürfelte/verteilte) Attributwerte plus Background-Bonus
-  getrennt speichern, oder nur das bereits finale Ergebnis? (Tendenz: getrennt speichern, für
-  Nachvollziehbarkeit und spätere Anzeige "Basis + Bonus" im Frontend)
+### Schritt 3 — Background-Boni anwenden
+- Wichtige Modellierungsentscheidung, die zugleich der erste Schritt Richtung des in der
+  Grundsatzentscheidung beschriebenen "berechneter Attributswert aus mehreren Quellen"-Gedankens ist:
+  Basiswert und Background-Bonus getrennt speichern, nicht nur das Endergebnis
 
 ### Schritt 4 — Frontend: mehrstufiger Erstellungs-Assistent
-- Schritt 1: Erstellungsmethode wählen (Point Buy / Standard Array)
-- Schritt 2: Rasse/Klasse/Background per Dropdown aus den neuen Referenz-Endpoints (kein Freitext mehr)
-- Schritt 3: Attribute passend zur gewählten Methode verteilen (Point-Buy-Zähler mit laufendem
-  Restbudget bzw. Standard-Array-Zuordnung statt freier Zahleneingabe)
-- Schritt 4: Zusammenfassung & Absenden
-
 ### Schritt 5 — Tests & Dokumentation
-- Backend: Unit-Tests für Kostentabelle und Array-Prüfung, Integrationstest für die neuen
-  Referenz-Endpoints
-- Swagger-Dokumentation der neuen Endpoints automatisch mit abgedeckt (springdoc erkennt sie ohne
-  Zusatzaufwand, wie in Phase 1 gelernt)
 
-**Nach Abschluss dieser Phase:** Rückkehr zu Phase 3, Schritt 5 (Charakter-Erstellung im Frontend), diesmal
-mit den echten Referenzdaten und Regeln statt der aktuellen Freitext-/Freiwert-Basisversion.
+**Nach Abschluss:** Rückkehr zu Phase 3, Schritt 5, mit den echten Referenzdaten statt Freitext.
 
 ---
 
 ## Phase 5 — Containerisierung (Docker)
-
-Dockerfile Backend (Multi-Stage), Dockerfile Frontend (Angular-Build → Nginx), `docker-compose.yml`,
-saubere Trennung von Umgebungsvariablen/Secrets.
-
----
-
 ## Phase 6 — Kubernetes-Grundlagen (ThinkPad-Server)
-
-k3s, Pods/Deployments/Services/Namespaces, ConfigMaps/Secrets, Ingress (Traefik). Hier entsteht die
-tatsächliche Multi-Service-Architektur mit Pfad-Routing pro Regelwerk-Service.
-
----
-
 ## Phase 7 — CI/CD
+## Phase 8 — Vertiefung / Ausbau (technisch, z. B. Helm, Monitoring, Auth-Feinschliff)
+## Phase 9 — Weitere Regelwerke (`pathfinder-backend`, `dsa5-backend`)
 
-GitHub Actions: Build + Tests je Push, Docker-Images in Registry, automatisches Deployment.
-
----
-
-## Phase 8 — Vertiefung / Ausbau
-
-- Helm-Chart, Monitoring (Prometheus/Grafana), Horizontal Pod Autoscaling, Redis-Caching, E2E-Tests
-- Auth-Fehlerantwort-Feinschliff (`401` statt `403`, eigener `AuthenticationEntryPoint`)
-- Migration auf Angulars neues `animate.enter`/`animate.leave`-System, sobald stabiler (aktuell noch
-  `provideAnimationsAsync()`, deprecated seit 20.2, geplante Entfernung erst v23)
+*(Details unverändert gegenüber vorheriger Roadmap-Version, siehe `pnp-character-manager`-Repo.)*
 
 ---
 
-## Phase 9 — Weitere Regelwerke
+## Phase 10 — Content & Regeltiefe (neu, Spur 2, bewusst fortlaufend/nie abgeschlossen)
 
-`pathfinder-backend`, `dsa5-backend` als eigenständige Projekte mit eigenem Domänenmodell, eigener
-Datenbank, eigenem Flyway-Set. Frontend: `features/characters/pathfinder/`, `.../dsa5/`, oberster
-Regelwerk-Umschalter. Ingress-Erweiterung. Prüfung, ob Auth wirklich gemeinsam bleiben kann.
+**Charakter dieser Phase, anders als alle vorherigen:** Kein festes Ende, kein "Schritt 5 = fertig".
+Wird kontinuierlich erweitert, auch parallel zu oder nach den technischen Phasen 5–9, ganz nach
+verfügbarer Zeit und Lust. Betrifft potenziell jedes künftige Regelwerk-Backend gleichermaßen.
+
+### Geplante Ausbaubereiche (unsortiert, keine feste Reihenfolge)
+
+- **Feats mit echten mechanischen Effekten** — eigene `Feat`-Entity, Verknüpfung zu Background/Klasse,
+  tatsächliche Auswirkung auf Charakterwerte statt reiner Anzeige
+- **Inventar & Ausrüstung** — Gegenstände, die Attributs- oder andere Boni gewähren (das konkrete
+  Beispiel "+1 auf Geschick durch ein Item"); erfordert die Weiterentwicklung des Attributsystems von
+  "einzelner gespeicherter Wert" zu "berechneter Wert aus Basis + mehreren Bonus-Quellen"
+- **Zauber/Spellcasting** — Zauberlisten pro Klasse, bekannte/vorbereitete Zauber, Zauberplätze
+- **Vollständige Rassen-/Klassenmerkmale** — alle Klassenmerkmale pro Level (1–20), vollständige
+  Rassen-Traits mit tatsächlicher Wirkung (nicht nur Anzeige-Text)
+- **Multiclassing**
+- **NPC-Unterstützung für Spielleiter** — vermutlich **eigenes, leichteres Modell** statt
+  Wiederverwendung von `PlayerCharacter`, da NPCs typischerweise ohne vollständiges
+  Charaktererstellungs-Regelwerk (Point Buy etc.) schnell erstellt werden; eigene Entscheidung,
+  wenn dieser Bereich ansteht
+- **Charakter-Level-Aufstieg als eigener Ablauf**, nicht nur ein Zahlenfeld
+
+**Ausdrücklich kein Ziel:** eine Spielumgebung zum Auswürfeln von Kämpfen oder anderen Aktionen — der
+Fokus bleibt auf der **Abbildung** eines vollständigen Charakterblatts, nicht auf Spielmechanik-Simulation.
 
 ---
 
-## Prinzip hinter der Reihenfolge (unverändert)
+## Prinzip hinter der Reihenfolge
 
-Jede Phase ist einzeln lauffähig und testbar, bevor die nächste beginnt. Architektonisch bedeutsame
-Anforderungen, die während einer laufenden Phase auftauchen (wie die D&D-Erstellungsregeln während der
-Frontend-Phase), werden als **eigene, saubere Phase** eingeplant, statt das laufende Backend-vor-Frontend-
-Prinzip zu vermischen — auch wenn das bedeutet, kurzzeitig zum Backend zurückzukehren, bevor das Frontend
-fortgesetzt wird.
+Jede Phase in Spur 1 ist einzeln lauffähig und testbar, bevor die nächste beginnt. Architektonisch
+bedeutsame Erkenntnisse (wie die Notwendigkeit eines "Basiswert + Boni aus mehreren Quellen"-Konzepts)
+werden dokumentiert und bewusst vorgedacht, sobald sie erkannt werden — aber nur so weit umgesetzt, wie
+es die aktuelle Phase tatsächlich braucht. Volle Inhaltstiefe ist explizit Aufgabe von Spur 2 (Phase 10)
+und hat kein Ende.
