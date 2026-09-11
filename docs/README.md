@@ -40,12 +40,12 @@ Regelwerk-Services nach URL-Pfad.
 
 ## Repositories
 
-| Repository | Beschreibung | Status |
-|---|---|---|
-| [`dnd-backend`](https://github.com/FelixRabenholdDev/dnd-backend) | Spring-Boot-API für D&D 5e (2024) | In aktiver Entwicklung |
-| [`pnp-character-manager-frontend`](https://github.com/FelixRabenholdDev/pnp-character-manager-frontend) | Gemeinsames Angular-Frontend | In aktiver Entwicklung |
-| `pathfinder-backend` | Spring-Boot-API für Pathfinder 1e | Geplant |
-| `dsa5-backend` | Spring-Boot-API für DSA 5 | Geplant |
+| Repository                                                                                              | Beschreibung                      | Status                 |
+| ------------------------------------------------------------------------------------------------------- | --------------------------------- | ---------------------- |
+| [`dnd-backend`](https://github.com/FelixRabenholdDev/dnd-backend)                                       | Spring-Boot-API für D&D 5e (2024) | In aktiver Entwicklung |
+| [`pnp-character-manager-frontend`](https://github.com/FelixRabenholdDev/pnp-character-manager-frontend) | Gemeinsames Angular-Frontend      | In aktiver Entwicklung |
+| `pathfinder-backend`                                                                                    | Spring-Boot-API für Pathfinder 1e | Geplant                |
+| `dsa5-backend`                                                                                          | Spring-Boot-API für DSA 5         | Geplant                |
 
 ## Tech-Stack
 
@@ -61,12 +61,14 @@ JUnit 5, Testcontainers, springdoc-openapi
 Eine detaillierte, phasenweise Roadmap mit Lernzielen und aktuellem Fortschritt findet sich unter
 [`docs/roadmap.md`](docs/roadmap.md).
 
-**Aktueller Stand:** Backend-Grundlagen und Authentifizierung für D&D 5e abgeschlossen, Frontend-Grundlagen
-in Arbeit.
+**Aktueller Stand:** Backend-Grundlagen, Authentifizierung und vollständige D&D-5e-Erstellungsregeln
+(Referenzdaten, Point Buy/Standard Array/Würfeln, Background-Boni) abgeschlossen. Frontend-Grundlagen
+größtenteils fertig, Feinschliff bei Fehlerbehandlung und Internationalisierung steht noch aus.
 
 ## Lokale Entwicklung
 
 Detaillierte Setup-Anleitungen befinden sich in den jeweiligen Repositories:
+
 - Backend-Setup: siehe README in [`dnd-backend`](https://github.com/FelixRabenholdDev/dnd-backend)
 - Frontend-Setup: siehe README in [`pnp-character-manager-frontend`](https://github.com/FelixRabenholdDev/pnp-character-manager-frontend)
 
