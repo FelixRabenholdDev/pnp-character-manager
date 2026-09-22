@@ -3,7 +3,7 @@
 **Stack:** Spring Boot (Backend, pro Regelwerk) · Angular (ein gemeinsames Frontend) · PostgreSQL · Docker · Kubernetes (k3s)
 **Ziel:** Java auf Industriestandard-Niveau lernen, inkl. Cloud-native Deployment — **und** ein langfristig
 weiter wachsendes, echtes Pen-&-Paper-Tool aufbauen.
-**Zuletzt aktualisiert:** nach Abschluss von Phase 4
+**Zuletzt aktualisiert:** nach Abschluss von Phase 5
 
 ---
 
@@ -99,7 +99,79 @@ Erstellungs-Assistenten abgedeckt (ersetzt die ursprüngliche, einfache Version)
 
 ---
 
-## Phase 5 — Containerisierung (Docker)
+## Phase 5 — Containerisierung (Docker) ✅ abgeschlossen
+
+📄 `Phase5_Containerisierung.pdf`
+
+### Schritt 1 — Backend-Dockerfile (`dnd-backend`) ✅
+
+- Multi-Stage-Build: Stage 1 (`eclipse-temurin:21-jdk`) baut das Jar mit Maven, Stage 2
+  (`eclipse-temurin:21-jre`) enthält nur das fertige Artefakt — spart erheblich Image-Größe, da
+  JDK/Maven/Quellcode im finalen Image nicht mehr enthalten sind
+- Layer-Caching bewusst ausgenutzt: zuerst `.mvn/`, `mvnw`, `pom.xml` kopieren und
+  `dependency:go-offline` ausführen, _danach erst_ `src/` kopieren — solange sich nur der Code,
+  nicht aber die Abhängigkeiten ändern, bleibt der teure Dependency-Download-Layer im Docker-Cache
+  erhalten
+- Nicht-root-Nutzer im Runtime-Image (`addgroup`/`adduser` + `USER spring:spring`) als
+  Sicherheitsmaßnahme — ein kompromittierter Java-Prozess läuft nicht mit Root-Rechten im Container
+- Verifiziert mit eigenständigem `docker run` gegen eine lokal laufende Postgres-Instanz
+  (`host.docker.internal`), inkl. erfolgreichem `curl` auf `/api/reference-data/races`
+
+### Schritt 2 — Frontend-Dockerfile (`pnp-character-manager-frontend`) ✅
+
+- Ebenfalls Multi-Stage: Stage 1 (`node:24-alpine`) führt `npm ci` und `npm run build` aus,
+  Stage 2 (`nginx:alpine`) übernimmt nur die fertigen, statischen Build-Artefakte
+- Nginx dient hier zwei Zwecken gleichzeitig: statischer Webserver für die Angular-App **und**
+  Reverse Proxy für `/api/` in Richtung Backend (`proxy_pass http://backend:8080/api/`) — dadurch
+  entfällt CORS innerhalb des Compose-Netzwerks vollständig, da der Browser nur noch mit dem
+  Frontend-Origin spricht
+- Diese Nginx-Proxy-Lösung zahlt sich erst hier aus, weil das Frontend seit Phase 3 bewusst mit
+  einem relativen `/api`-Pfad (statt fest codierter `localhost:8080`-URL) arbeitet
+
+### Schritt 3 — Echter Bug entdeckt: Projekt-Namensinkonsistenz ✅
+
+- Beim Docker-Build fiel auf, dass der erzeugte `dist/`-Ordner weiterhin `dnd-character-frontend`
+  hieß, obwohl `package.json` bereits umbenannt war — Ursache: `angular.json` führt einen eigenen,
+  von `package.json` unabhängigen internen Projekt-Schlüssel
+- Bewusste Entscheidung, dies jetzt sauber zu beheben (statt nur den Dockerfile-Pfad anzupassen),
+  weil dasselbe Frontend später auch Pathfinder und DSA5 bedienen wird — ein internes „dnd“ im
+  Namen wäre irreführend
+- Behoben durch Umbenennung des `angular.json`-Projekt-Schlüssels und der beiden
+  `buildTarget`-Referenzen unter `serve.configurations` auf `pnp-character-manager-frontend`
+- Zusätzlich fehlende Abhängigkeit `@angular/animations` im Produktions-Build entdeckt und behoben
+  (vorher nur transitiv vorhanden, für den optimierten Build aber explizit nötig)
+
+### Schritt 4 — Orchestrierung mit Docker Compose (`pnp-character-manager`) ✅
+
+- Ein zentrales `docker-compose.yml` im Meta-Repo startet alle drei Dienste (`postgres`,
+  `backend`, `frontend`) gemeinsam; die Backend- und Frontend-Images werden dabei direkt aus den
+  Nachbar-Repos gebaut (`build.context: ../dnd-backend` bzw. `../pnp-character-manager-frontend`)
+- Startreihenfolge über `healthcheck` (Postgres: `pg_isready`) und `depends_on: condition:
+service_healthy` abgesichert — das Backend startet nachweislich erst, wenn die Datenbank
+  tatsächlich Verbindungen annimmt, nicht nur, wenn der Postgres-Container existiert
+- Internes Networking rein über Docker-Compose-Servicenamen (`postgres`, `backend` als Hostnamen)
+  statt über `localhost` oder feste IPs — funktioniert automatisch dank Compose-eigenem DNS
+- Geheimnisverwaltung über `.env` (lokal, in `.gitignore`, **niemals committet**) und
+  `.env.example` (committet, mit Platzhalter-/Dev-Werten als Vorlage) — bewusste
+  Sicherheitsentscheidung, Zugangsdaten und JWT-Secret nicht im Repository zu versionieren
+
+### Schritt 5 — End-to-End-Verifikation ✅
+
+- `docker compose up --build` erfolgreich: alle 6 Flyway-Migrationen liefen gegen eine frische
+  Datenbank durch, Healthcheck grün, Backend und Frontend gestartet
+- Vollständiger Register → Login → Charakterliste-Ablauf im Browser über den Nginx-Reverse-Proxy
+  getestet und funktionsfähig
+- Ein während der Verifikation aufgetretener Login-Fehler stellte sich nicht als Bug heraus,
+  sondern als eigener Tippfehler bei den Anmeldedaten (E-Mail-Adresse statt Benutzername
+  verwendet) — sauber diagnostiziert über die Netzwerk-Analyse im Browser statt vorschneller
+  Codeänderungen
+
+**Wichtige Lektion aus dieser Phase:** Der Docker-Build-Prozess deckte zwei reale Inkonsistenzen auf
+(Projekt-Namensgebung, fehlende Abhängigkeit), die im normalen Entwicklungsbetrieb (`ng serve`)
+nicht sichtbar geworden wären — ein guter Beleg dafür, warum Containerisierung früh im Projekt
+sinnvoll ist, statt sie bis kurz vor einem realen Deployment aufzuschieben.
+
+---
 
 ## Phase 6 — Kubernetes-Grundlagen (ThinkPad-Server)
 

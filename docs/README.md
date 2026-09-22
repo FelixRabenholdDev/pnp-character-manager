@@ -61,9 +61,7 @@ JUnit 5, Testcontainers, springdoc-openapi
 Eine detaillierte, phasenweise Roadmap mit Lernzielen und aktuellem Fortschritt findet sich unter
 [`docs/roadmap.md`](docs/roadmap.md).
 
-**Aktueller Stand:** Backend-Grundlagen, Authentifizierung und vollständige D&D-5e-Erstellungsregeln
-(Referenzdaten, Point Buy/Standard Array/Würfeln, Background-Boni) abgeschlossen. Frontend-Grundlagen
-größtenteils fertig, Feinschliff bei Fehlerbehandlung und Internationalisierung steht noch aus.
+**Aktueller Stand:** Backend-Grundlagen, Authentifizierung, vollständige D&D-5e-Erstellungsregeln und Containerisierung (Docker, Docker Compose) sind abgeschlossen. Frontend-Grundlagen größtenteils fertig (Fehlerbehandlung, Styling-Feinschliff und Internationalisierung stehen noch aus). Als Nächstes: Phase 6 — Kubernetes-Grundlagen auf dem eigenen Server (k3s).
 
 ## Lokale Entwicklung
 
