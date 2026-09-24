@@ -3,7 +3,7 @@
 **Stack:** Spring Boot (Backend, pro Regelwerk) · Angular (ein gemeinsames Frontend) · PostgreSQL · Docker · Kubernetes (k3s)
 **Ziel:** Java auf Industriestandard-Niveau lernen, inkl. Cloud-native Deployment — **und** ein langfristig
 weiter wachsendes, echtes Pen-&-Paper-Tool aufbauen.
-**Zuletzt aktualisiert:** nach Abschluss von Phase 5
+**Zuletzt aktualisiert:** während Phase 6 (Kubernetes-Grundlagen)
 
 ---
 
@@ -114,6 +114,9 @@ Erstellungs-Assistenten abgedeckt (ersetzt die ursprüngliche, einfache Version)
   erhalten
 - Nicht-root-Nutzer im Runtime-Image (`addgroup`/`adduser` + `USER spring:spring`) als
   Sicherheitsmaßnahme — ein kompromittierter Java-Prozess läuft nicht mit Root-Rechten im Container
+- **Nachtrag aus Phase 6:** Der benannte Nutzer `spring:spring` wurde später durch einen numerischen
+  Nutzer ersetzt (`appuser`, UID/GID `10001:10001`), um NSS-Namensauflösungsprobleme im
+  Kubernetes-/containerd-Kontext zu vermeiden.
 - Verifiziert mit eigenständigem `docker run` gegen eine lokal laufende Postgres-Instanz
   (`host.docker.internal`), inkl. erfolgreichem `curl` auf `/api/reference-data/races`
 
@@ -173,7 +176,53 @@ sinnvoll ist, statt sie bis kurz vor einem realen Deployment aufzuschieben.
 
 ---
 
-## Phase 6 — Kubernetes-Grundlagen (ThinkPad-Server)
+## Phase 6 — Kubernetes-Grundlagen (Homeserver) ⏳ in Arbeit
+
+📄 `exec-format-error-postmortem.pdf`
+
+### Schritt 1 — Backend-Deployment (`backend.yaml`) ✅
+
+- Deployment + Service (ClusterIP) im Namespace `pnp`
+- Zugangsdaten und JWT-Secret über Kubernetes-Secret (`pnp-secrets`), nicht im Manifest selbst
+- Verifiziert über `kubectl port-forward` und `curl` gegen `/api/reference-data/races`
+
+### Schritt 2 — Debugging: `exec format error` ✅
+
+- Backend-Pod ging nach dem Deployment sofort in `CrashLoopBackOff` mit
+  `exec /opt/java/openjdk/bin/java: exec format error`
+- Architektur-Mismatch, korrupter Image-Push/Pull, BuildKit-Attestations, Layer-Kompression und
+  Speicherplatz wurden der Reihe nach ausgeschlossen
+- Tatsächliche Ursache: ein dauerhaft korrupter, containerd-interner overlayfs-Snapshot-Cache für
+  das Standard-`eclipse-temurin:21-jre`-Basisimage auf dem Homeserver-Node — verursacht durch eine
+  Inkompatibilität zwischen der dortigen containerd-Version und Canonicals neuerer
+  "Rockcraft"/Chiseled-Ubuntu-Bauweise der Standard-Tags. Dieser Cache überlebte sowohl das Löschen
+  der Image-Referenz als auch der rohen Content-Blobs und sogar einen vollständigen
+  `systemctl restart k3s`
+- Behoben durch Wechsel auf die expliziten `-jammy`-Tag-Varianten (`21-jdk-jammy`, `21-jre-jammy`),
+  die auf komplett andere Image-Inhalte verweisen und den feststeckenden Cache dadurch umgehen,
+  statt ihn entfernen zu müssen
+- Zum Nachlesen als eigenes kleines PDF zusammengefasst (`exec-format-error-postmortem.pdf`)
+
+### Schritt 3 — Frontend-Deployment (`frontend.yaml`) ✅
+
+- Frontend-Image gebaut und nach Docker Hub gepusht
+- Deployment + Service vom Typ `NodePort` (Port `30080`) — bewusst nur intern im Heimnetz
+  erreichbar, keine Exposition ins öffentliche Internet (das ist explizit einer viel späteren Phase
+  vorbehalten)
+- Erreichbarkeit im Heimnetz über `http://<homeserver-ip>:30080` verifiziert
+
+### Schritt 4 — CORS zwischen Frontend und Backend 🔲 offen
+
+- Login-Versuch über die neue Frontend-Origin schlägt mit `403 Invalid CORS request` fehl —
+  die Origin-Liste in der Backend-CORS-Konfiguration muss um `http://<homeserver-ip>:30080` ergänzt
+  werden
+
+### Offen
+
+- CORS-Konfiguration anpassen (Schritt 4)
+- ConfigMaps für nicht-geheime Konfiguration
+- Liveness-/Readiness-Probes für Backend und Postgres
+- PersistentVolumeClaim für Postgres (aktuell vermutlich ephemer)
 
 ## Phase 7 — CI/CD
 
