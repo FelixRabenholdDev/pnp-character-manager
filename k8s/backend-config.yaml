@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: pnp
+data:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/dnd_characters

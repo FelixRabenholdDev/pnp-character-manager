@@ -3,7 +3,7 @@
 **Stack:** Spring Boot (Backend, pro Regelwerk) · Angular (ein gemeinsames Frontend) · PostgreSQL · Docker · Kubernetes (k3s)
 **Ziel:** Java auf Industriestandard-Niveau lernen, inkl. Cloud-native Deployment — **und** ein langfristig
 weiter wachsendes, echtes Pen-&-Paper-Tool aufbauen.
-**Zuletzt aktualisiert:** während Phase 6 (Kubernetes-Grundlagen)
+**Zuletzt aktualisiert:** nach Abschluss von Phase 6
 
 ---
 
@@ -176,14 +176,15 @@ sinnvoll ist, statt sie bis kurz vor einem realen Deployment aufzuschieben.
 
 ---
 
-## Phase 6 — Kubernetes-Grundlagen (Homeserver) ⏳ in Arbeit
+## Phase 6 — Kubernetes-Grundlagen (Homeserver) ✅ abgeschlossen
 
-📄 `exec-format-error-postmortem.pdf`
+📄 `Phase6_Kubernetes-Grundlagen.pdf` · 📄 `exec-format-error-postmortem.pdf`
 
 ### Schritt 1 — Backend-Deployment (`backend.yaml`) ✅
 
 - Deployment + Service (ClusterIP) im Namespace `pnp`
 - Zugangsdaten und JWT-Secret über Kubernetes-Secret (`pnp-secrets`), nicht im Manifest selbst
+- PersistentVolumeClaim für Postgres (`1Gi`, `ReadWriteOnce`) von Anfang an vorhanden
 - Verifiziert über `kubectl port-forward` und `curl` gegen `/api/reference-data/races`
 
 ### Schritt 2 — Debugging: `exec format error` ✅
@@ -195,34 +196,45 @@ sinnvoll ist, statt sie bis kurz vor einem realen Deployment aufzuschieben.
 - Tatsächliche Ursache: ein dauerhaft korrupter, containerd-interner overlayfs-Snapshot-Cache für
   das Standard-`eclipse-temurin:21-jre`-Basisimage auf dem Homeserver-Node — verursacht durch eine
   Inkompatibilität zwischen der dortigen containerd-Version und Canonicals neuerer
-  "Rockcraft"/Chiseled-Ubuntu-Bauweise der Standard-Tags. Dieser Cache überlebte sowohl das Löschen
-  der Image-Referenz als auch der rohen Content-Blobs und sogar einen vollständigen
-  `systemctl restart k3s`
-- Behoben durch Wechsel auf die expliziten `-jammy`-Tag-Varianten (`21-jdk-jammy`, `21-jre-jammy`),
-  die auf komplett andere Image-Inhalte verweisen und den feststeckenden Cache dadurch umgehen,
-  statt ihn entfernen zu müssen
+  "Rockcraft"/Chiseled-Ubuntu-Bauweise der Standard-Tags
+- Behoben durch Wechsel auf die expliziten `-jammy`-Tag-Varianten (`21-jdk-jammy`, `21-jre-jammy`)
 - Zum Nachlesen als eigenes kleines PDF zusammengefasst (`exec-format-error-postmortem.pdf`)
 
 ### Schritt 3 — Frontend-Deployment (`frontend.yaml`) ✅
 
 - Frontend-Image gebaut und nach Docker Hub gepusht
 - Deployment + Service vom Typ `NodePort` (Port `30080`) — bewusst nur intern im Heimnetz
-  erreichbar, keine Exposition ins öffentliche Internet (das ist explizit einer viel späteren Phase
-  vorbehalten)
+  erreichbar, keine Exposition ins öffentliche Internet
 - Erreichbarkeit im Heimnetz über `http://<homeserver-ip>:30080` verifiziert
 
-### Schritt 4 — CORS zwischen Frontend und Backend 🔲 offen
+### Schritt 4 — CORS zwischen Frontend und Backend ✅
 
-- Login-Versuch über die neue Frontend-Origin schlägt mit `403 Invalid CORS request` fehl —
-  die Origin-Liste in der Backend-CORS-Konfiguration muss um `http://<homeserver-ip>:30080` ergänzt
-  werden
+- Login-Versuch über die neue Frontend-Origin schlug zunächst mit `403 Invalid CORS request` fehl
+- Behoben durch Ergänzung der `allowedOrigins` in `SecurityConfig.java` um
+  `http://<homeserver-ip>:30080`
+- Vollständiger Registrierung → Login-Ablauf im Cluster über `curl`/Postman und die Browser-UI
+  verifiziert
 
-### Offen
+### Schritt 5 — Liveness- und Readiness-Probes ✅
 
-- CORS-Konfiguration anpassen (Schritt 4)
-- ConfigMaps für nicht-geheime Konfiguration
-- Liveness-/Readiness-Probes für Backend und Postgres
-- PersistentVolumeClaim für Postgres (aktuell vermutlich ephemer)
+- Backend: `spring-boot-starter-actuator` ergänzt, `/actuator/health/liveness` und
+  `/actuator/health/readiness` über `management.endpoint.health.probes.enabled: true` aktiviert,
+  in `SecurityConfig` als `permitAll()` freigegeben
+- Postgres: `exec`-Probe mit `pg_isready -U $(POSTGRES_USER)`
+- Beobachtung: ein einzelner Postgres-Neustart kurz nach Einführung der Probe (vermutlich
+  `initialDelaySeconds` knapp zu kurz für den Postgres-Start), trat bei weiterer Beobachtung nicht
+  erneut auf
+
+### Schritt 6 — ConfigMap für nicht-geheime Konfiguration ✅
+
+- `SPRING_DATASOURCE_URL` aus dem Deployment-Manifest in eine eigene `ConfigMap`
+  (`backend-config`) ausgelagert, per `configMapKeyRef` referenziert
+- Trennt Konfiguration klar von Deployment-Definition und Secrets
+
+### Offen für später (nicht Teil von Phase 6)
+
+- Ingress-Controller / externe Erreichbarkeit — bewusst einer viel späteren Phase vorbehalten
+- Helm-Charts, Monitoring (vorgesehen für Phase 8)
 
 ## Phase 7 — CI/CD
 

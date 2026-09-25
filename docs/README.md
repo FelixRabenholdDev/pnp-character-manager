@@ -35,8 +35,9 @@ Services und lässt Nutzer zwischen Regelwerken wechseln.
 Authentifizierung erfolgt zustandslos über JWT — jeder Backend-Service validiert Tokens unabhängig
 über ein gemeinsames Secret, ganz ohne Rückfrage bei einem zentralen Auth-Service.
 
-In Kubernetes (geplant) übernimmt ein Ingress-Controller das Routing zu den einzelnen
-Regelwerk-Services nach URL-Pfad.
+In Kubernetes übernimmt (Stand jetzt: intern im Heimnetz per NodePort) das Frontend die
+Auslieferung und einen Reverse Proxy zum Backend; ein Ingress-Controller für sauberes
+URL-Pfad-Routing zwischen mehreren Regelwerk-Services ist für eine spätere Phase vorgesehen.
 
 ## Repositories
 
@@ -49,19 +50,19 @@ Regelwerk-Services nach URL-Pfad.
 
 ## Tech-Stack
 
-**Backend:** Java 21, Spring Boot 4, Spring Data JPA, Spring Security (JWT), PostgreSQL, Flyway,
-JUnit 5, Testcontainers, springdoc-openapi
+**Backend:** Java 21, Spring Boot 4, Spring Data JPA, Spring Security (JWT), Spring Boot Actuator,
+PostgreSQL, Flyway, JUnit 5, Testcontainers, springdoc-openapi
 
 **Frontend:** Angular 22 (Standalone Components), Angular Material, RxJS, TypeScript
 
-**Infrastruktur (geplant):** Docker, Kubernetes (k3s), GitHub Actions, Helm
+**Infrastruktur:** Docker, Kubernetes (k3s), GitHub Actions (geplant), Helm (geplant)
 
 ## Projektstatus & Roadmap
 
 Eine detaillierte, phasenweise Roadmap mit Lernzielen und aktuellem Fortschritt findet sich unter
 [`docs/roadmap.md`](docs/roadmap.md).
 
-**Aktueller Stand:** Backend-Grundlagen, Authentifizierung, vollständige D&D-5e-Erstellungsregeln und Containerisierung (Docker, Docker Compose) sind abgeschlossen. Frontend-Grundlagen größtenteils fertig (Fehlerbehandlung, Styling-Feinschliff und Internationalisierung stehen noch aus). Phase 6 — Kubernetes-Grundlagen — ist in Arbeit: Backend und Frontend laufen im k3s-Cluster auf dem eigenen Server (NodePort, nur intern erreichbar), inklusive Fix eines hartnäckigen `exec format error` durch Wechsel auf `-jammy`-Base-Images. Offen: CORS-Konfiguration im Backend muss die neue Frontend-Origin erlauben, danach folgen ConfigMaps, Health-Probes und eine PersistentVolumeClaim für Postgres.
+**Aktueller Stand:** Backend-Grundlagen, Authentifizierung, vollständige D&D-5e-Erstellungsregeln, Containerisierung (Docker, Docker Compose) und Kubernetes-Grundlagen (Phase 6) sind abgeschlossen. Backend und Frontend laufen produktiv im eigenen k3s-Cluster (Namespace `pnp`), inklusive Health-Probes, ConfigMap-basierter Konfiguration und funktionierendem Login-Flow — erreichbar intern im Heimnetz per NodePort. Frontend-Grundlagen größtenteils fertig (Fehlerbehandlung, Styling-Feinschliff und Internationalisierung stehen noch aus). Als Nächstes: Phase 7 — CI/CD.
 
 ## Lokale Entwicklung
 
